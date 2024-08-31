@@ -13,8 +13,7 @@
 #include <sbi_utils/timer/fdt_timer.h>
 
 /* List of FDT timer drivers generated at compile time */
-extern struct fdt_timer *fdt_timer_drivers[];
-extern unsigned long fdt_timer_drivers_size;
+extern struct fdt_timer *const fdt_timer_drivers[];
 
 static struct fdt_timer *current_driver = NULL;
 
@@ -38,7 +37,7 @@ static int fdt_timer_cold_init(void)
 	const struct fdt_match *match;
 	const void *fdt = fdt_get_address();
 
-	for (pos = 0; pos < fdt_timer_drivers_size; pos++) {
+	for (pos = 0; fdt_timer_drivers[pos]; pos++) {
 		drv = fdt_timer_drivers[pos];
 
 		noff = -1;
