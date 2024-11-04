@@ -15,16 +15,11 @@
 /* List of FDT gpio drivers generated at compile time */
 extern struct fdt_gpio *const fdt_gpio_drivers[];
 
-static int fdt_gpio_init(const void *fdt, u32 phandle)
+static int fdt_gpio_init(const void *fdt, int nodeoff)
 {
-	int pos, nodeoff, rc;
+	int pos, rc;
 	struct fdt_gpio *drv;
 	const struct fdt_match *match;
-
-	/* Find node offset */
-	nodeoff = fdt_node_offset_by_phandle(fdt, phandle);
-	if (nodeoff < 0)
-		return nodeoff;
 
 	/* Check "gpio-controller" property */
 	if (!fdt_getprop(fdt, nodeoff, "gpio-controller", &rc))
@@ -36,7 +31,7 @@ static int fdt_gpio_init(const void *fdt, u32 phandle)
 
 		match = fdt_match_node(fdt, nodeoff, drv->match_table);
 		if (match && drv->init) {
-			rc = drv->init(fdt, nodeoff, phandle, match);
+			rc = drv->init(fdt, nodeoff, match);
 			if (rc == SBI_ENODEV)
 				continue;
 			if (rc)
@@ -48,20 +43,20 @@ static int fdt_gpio_init(const void *fdt, u32 phandle)
 	return SBI_ENOSYS;
 }
 
-static int fdt_gpio_chip_find(const void *fdt, u32 phandle,
+static int fdt_gpio_chip_find(const void *fdt, int nodeoff,
 			      struct gpio_chip **out_chip)
 {
 	int rc;
-	struct gpio_chip *chip = gpio_chip_find(phandle);
+	struct gpio_chip *chip = gpio_chip_find(nodeoff);
 
 	if (!chip) {
 		/* GPIO chip not found so initialize matching driver */
-		rc = fdt_gpio_init(fdt, phandle);
+		rc = fdt_gpio_init(fdt, nodeoff);
 		if (rc)
 			return rc;
 
 		/* Try to find GPIO chip again */
-		chip = gpio_chip_find(phandle);
+		chip = gpio_chip_find(nodeoff);
 		if (!chip)
 			return SBI_ENOSYS;
 	}
@@ -76,7 +71,6 @@ int fdt_gpio_pin_get(const void *fdt, int nodeoff, int index,
 		     struct gpio_pin *out_pin)
 {
 	int rc;
-	u32 phandle;
 	struct fdt_gpio *drv;
 	struct gpio_chip *chip = NULL;
 	struct fdt_phandle_args pargs;
@@ -91,8 +85,7 @@ int fdt_gpio_pin_get(const void *fdt, int nodeoff, int index,
 	if (rc)
 		return rc;
 
-	phandle = fdt_get_phandle(fdt, pargs.node_offset);
-	rc = fdt_gpio_chip_find(fdt, phandle, &chip);
+	rc = fdt_gpio_chip_find(fdt, pargs.node_offset, &chip);
 	if (rc)
 		return rc;
 

@@ -15,7 +15,7 @@
 /* List of FDT regmap drivers generated at compile time */
 extern struct fdt_regmap *const fdt_regmap_drivers[];
 
-static int fdt_regmap_init(const void *fdt, int nodeoff, u32 phandle)
+static int fdt_regmap_init(const void *fdt, int nodeoff)
 {
 	int pos, rc;
 	struct fdt_regmap *drv;
@@ -26,7 +26,7 @@ static int fdt_regmap_init(const void *fdt, int nodeoff, u32 phandle)
 		drv = fdt_regmap_drivers[pos];
 		match = fdt_match_node(fdt, nodeoff, drv->match_table);
 		if (match && drv->init) {
-			rc = drv->init(fdt, nodeoff, phandle, match);
+			rc = drv->init(fdt, nodeoff, match);
 			if (rc == SBI_ENODEV)
 				continue;
 			if (rc)
@@ -38,20 +38,20 @@ static int fdt_regmap_init(const void *fdt, int nodeoff, u32 phandle)
 	return SBI_ENOSYS;
 }
 
-static int fdt_regmap_find(const void *fdt, int nodeoff, u32 phandle,
+static int fdt_regmap_find(const void *fdt, int nodeoff,
 			   struct regmap **out_rmap)
 {
 	int rc;
-	struct regmap *rmap = regmap_find(phandle);
+	struct regmap *rmap = regmap_find(nodeoff);
 
 	if (!rmap) {
 		/* Regmap not found so initialize matching driver */
-		rc = fdt_regmap_init(fdt, nodeoff, phandle);
+		rc = fdt_regmap_init(fdt, nodeoff);
 		if (rc)
 			return rc;
 
 		/* Try to find regmap again */
-		rmap = regmap_find(phandle);
+		rmap = regmap_find(nodeoff);
 		if (!rmap)
 			return SBI_ENOSYS;
 	}
@@ -74,7 +74,7 @@ int fdt_regmap_get_by_phandle(const void *fdt, u32 phandle,
 	if (pnodeoff < 0)
 		return pnodeoff;
 
-	return fdt_regmap_find(fdt, pnodeoff, phandle, out_rmap);
+	return fdt_regmap_find(fdt, pnodeoff, out_rmap);
 }
 
 int fdt_regmap_get(const void *fdt, int nodeoff, struct regmap **out_rmap)
