@@ -264,11 +264,13 @@ include $(libsbiutils-object-mks)
 include $(firmware-object-mks)
 
 # Setup list of objects
-libsbi-objs-path-y=$(foreach obj,$(libsbi-objs-y),$(build_dir)/lib/sbi/$(obj))
 ifdef PLATFORM
+libsbi-objs-path-y=$(foreach obj,$(libsbi-objs-y),$(platform_build_dir)/lib/sbi/$(obj))
 libsbiutils-objs-path-y=$(foreach obj,$(libsbiutils-objs-y),$(platform_build_dir)/lib/utils/$(obj))
 platform-objs-path-y=$(foreach obj,$(platform-objs-y),$(platform_build_dir)/$(obj))
 firmware-bins-path-y=$(foreach bin,$(firmware-bins-y),$(platform_build_dir)/firmware/$(bin))
+else
+libsbi-objs-path-y=$(foreach obj,$(libsbi-objs-y),$(build_dir)/lib/sbi/$(obj))
 endif
 firmware-elfs-path-y=$(firmware-bins-path-y:.bin=.elf)
 firmware-objs-path-y=$(firmware-bins-path-y:.bin=.o)
@@ -504,9 +506,10 @@ compile_gen_dep = $(CMD_PREFIX)mkdir -p `dirname $(1)`; \
 	     echo " GEN-DEP   $(subst $(build_dir)/,,$(1))"; \
 	     echo "$(1:.dep=$(2)): $(3)" >> $(1)
 
-targets-y  = $(build_dir)/lib/libsbi.a
 ifdef PLATFORM
 targets-y += $(platform_build_dir)/lib/libplatsbi.a
+else
+targets-y  = $(build_dir)/lib/libsbi.a
 endif
 targets-y += $(firmware-bins-path-y)
 
@@ -564,6 +567,11 @@ $(platform_build_dir)/%.dep: $(platform_src_dir)/%.c $(KCONFIG_AUTOHEADER)
 
 $(platform_build_dir)/%.o: $(platform_src_dir)/%.c $(KCONFIG_AUTOHEADER)
 	$(call compile_cc,$@,$<)
+
+ifeq ($(BUILD_INFO),y)
+$(platform_build_dir)/lib/sbi/sbi_init.o: $(libsbi_dir)/sbi_init.c FORCE
+	$(call compile_cc,$@,$<)
+endif
 
 $(platform_build_dir)/%.dep: $(platform_src_dir)/%.S
 	$(call compile_as_dep,$@,$<)
