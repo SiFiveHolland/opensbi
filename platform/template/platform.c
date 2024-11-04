@@ -105,20 +105,12 @@ static int platform_ipi_init(void)
 }
 
 /*
- * Initialize platform timer for current HART.
+ * Initialize platform timer during cold boot.
  */
-static int platform_timer_init(bool cold_boot)
+static int platform_timer_init(void)
 {
-	int ret;
-
 	/* Example if the generic ACLINT driver is used */
-	if (cold_boot) {
-		ret = aclint_mtimer_cold_init(&mtimer, NULL);
-		if (ret)
-			return ret;
-	}
-
-	return aclint_mtimer_warm_init();
+	return aclint_mtimer_cold_init(&mtimer, NULL);
 }
 
 /*

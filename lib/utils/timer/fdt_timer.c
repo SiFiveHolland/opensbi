@@ -15,22 +15,7 @@
 /* List of FDT timer drivers generated at compile time */
 extern struct fdt_timer *const fdt_timer_drivers[];
 
-static struct fdt_timer *current_driver = NULL;
-
-void fdt_timer_exit(void)
-{
-	if (current_driver && current_driver->exit)
-		current_driver->exit();
-}
-
-static int fdt_timer_warm_init(void)
-{
-	if (current_driver && current_driver->warm_init)
-		return current_driver->warm_init();
-	return 0;
-}
-
-static int fdt_timer_cold_init(void)
+int fdt_timer_init(void)
 {
 	int pos, noff, rc;
 	struct fdt_timer *drv;
@@ -55,7 +40,6 @@ static int fdt_timer_cold_init(void)
 				continue;
 			if (rc)
 				return rc;
-			current_driver = drv;
 
 			/*
 			 * We will have multiple timer devices on multi-die or
@@ -69,17 +53,4 @@ static int fdt_timer_cold_init(void)
 	 * mtimer/clint DT node in the device tree.
 	 */
 	return 0;
-}
-
-int fdt_timer_init(bool cold_boot)
-{
-	int rc;
-
-	if (cold_boot) {
-		rc = fdt_timer_cold_init();
-		if (rc)
-			return rc;
-	}
-
-	return fdt_timer_warm_init();
 }

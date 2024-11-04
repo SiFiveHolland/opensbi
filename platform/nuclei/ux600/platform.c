@@ -200,17 +200,9 @@ static int ux600_ipi_init(void)
 	return aclint_mswi_cold_init(&mswi);
 }
 
-static int ux600_timer_init(bool cold_boot)
+static int ux600_timer_init(void)
 {
-	int rc;
-
-	if (cold_boot) {
-		rc = aclint_mtimer_cold_init(&mtimer, NULL);
-		if (rc)
-			return rc;
-	}
-
-	return aclint_mtimer_warm_init();
+	return aclint_mtimer_cold_init(&mtimer, NULL);
 }
 
 const struct sbi_platform_operations platform_ops = {

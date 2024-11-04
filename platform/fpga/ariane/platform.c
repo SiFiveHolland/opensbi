@@ -114,19 +114,11 @@ static int ariane_ipi_init(void)
 }
 
 /*
- * Initialize ariane timer for current HART.
+ * Initialize ariane timer during cold boot.
  */
-static int ariane_timer_init(bool cold_boot)
+static int ariane_timer_init(void)
 {
-	int ret;
-
-	if (cold_boot) {
-		ret = aclint_mtimer_cold_init(&mtimer, NULL);
-		if (ret)
-			return ret;
-	}
-
-	return aclint_mtimer_warm_init();
+	return aclint_mtimer_cold_init(&mtimer, NULL);
 }
 
 /*
