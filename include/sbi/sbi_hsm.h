@@ -13,7 +13,7 @@
 #include <sbi/sbi_hartmask.h>
 #include <sbi/sbi_types.h>
 
-/** Hart state managment device */
+/** Hart state management device */
 struct sbi_hsm_device {
 	/** Name of the hart state managment device */
 	char name[32];
