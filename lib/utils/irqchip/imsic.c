@@ -255,7 +255,7 @@ void imsic_local_irqchip_init(void)
 	imsic_local_eix_update(IMSIC_IPI_ID, 1, false, true);
 }
 
-int imsic_warm_irqchip_init(void)
+static int imsic_warm_irqchip_init(void)
 {
 	struct imsic_data *imsic = imsic_get_data(current_hartindex());
 
@@ -345,6 +345,11 @@ int imsic_data_check(struct imsic_data *imsic)
 	return 0;
 }
 
+static struct sbi_irqchip_device imsic_device = {
+	.warm_init	= imsic_warm_irqchip_init,
+	.irq_handle	= imsic_external_irqfn,
+};
+
 int imsic_cold_irqchip_init(struct imsic_data *imsic)
 {
 	int i, rc;
@@ -372,9 +377,6 @@ int imsic_cold_irqchip_init(struct imsic_data *imsic)
 			return SBI_ENOMEM;
 	}
 
-	/* Setup external interrupt function for IMSIC */
-	sbi_irqchip_set_irqfn(imsic_external_irqfn);
-
 	/* Add IMSIC regions to the root domain */
 	for (i = 0; i < IMSIC_MAX_REGS && imsic->regs[i].size; i++) {
 		rc = sbi_domain_root_add_memrange(imsic->regs[i].addr,
@@ -386,6 +388,9 @@ int imsic_cold_irqchip_init(struct imsic_data *imsic)
 		if (rc)
 			return rc;
 	}
+
+	/* Register irqchip device */
+	sbi_irqchip_add_device(&imsic_device);
 
 	/* Register IPI device */
 	sbi_ipi_set_device(&imsic_ipi_device);
